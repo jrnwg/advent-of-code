@@ -1,10 +1,9 @@
-use advent_of_code::get_input;
+use advent_of_code::{get_input, solve};
 use std::cmp::Ordering;
 
 fn main() {
     let input = get_input(3);
-    println!("Part 1: {}", part_one(&input));
-    println!("Part 2: {}", part_two(&input));
+    solve(&input, part_one, part_two);
 }
 
 fn part_one(input: &str) -> u32 {
