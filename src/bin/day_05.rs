@@ -1,9 +1,9 @@
-use advent_of_code::get_input;
+use advent_of_code::{get_input, solve};
 use std::collections::BTreeMap;
 
 fn main() {
     let input = get_input(5);
-    println!("Part 1: {}", part_one(&input));
+    solve(&input, part_one, part_two);
 }
 
 struct RangeTree {
@@ -28,6 +28,24 @@ impl RangeTree {
         self.ranges
             .iter()
             .any(|(&start, &end)| start <= value && value <= end)
+    }
+
+    fn merge(&mut self) {
+        let mut merged: BTreeMap<u64, u64> = BTreeMap::new();
+
+        for (&start, &end) in &self.ranges {
+            if let Some((&last_start, &last_end)) = merged.iter().next_back() {
+                if start <= last_end + 1 {
+                    merged.insert(last_start, last_end.max(end));
+                } else {
+                    merged.insert(start, end);
+                }
+            } else {
+                merged.insert(start, end);
+            }
+        }
+
+        self.ranges = merged;
     }
 }
 
@@ -58,6 +76,29 @@ fn part_one(input: &str) -> u64 {
     sum
 }
 
+fn part_two(input: &str) -> u64 {
+    let mut tree = RangeTree::new();
+
+    for line in input.lines() {
+        if line.is_empty() {
+            break;
+        }
+        let start_end: Vec<&str> = line.split('-').collect();
+        let start: u64 = start_end[0].parse().unwrap();
+        let end: u64 = start_end[1].parse().unwrap();
+
+        tree.insert(start, end);
+    }
+
+    tree.merge();
+
+    let mut sum = 0;
+    for (start, end) in &tree.ranges {
+        sum += end - start + 1;
+    }
+    sum
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -77,5 +118,10 @@ mod tests {
     #[test]
     fn test_part_one() {
         assert_eq!(part_one(TEST_INPUT), 3);
+    }
+
+    #[test]
+    fn test_part_two() {
+        assert_eq!(part_two(TEST_INPUT), 14);
     }
 }
