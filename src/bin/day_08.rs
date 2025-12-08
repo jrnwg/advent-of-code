@@ -1,4 +1,4 @@
-use advent_of_code::get_input;
+use advent_of_code::{get_input, solve};
 
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -9,8 +9,11 @@ const MAX_PAIRS: usize = 1000;
 
 fn main() {
     let input = get_input(8);
-    println!("Part One: {}", part_one(&input, MAX_PAIRS));
-    println!("Part Two: {}", part_two(&input, MAX_PAIRS));
+    solve(
+        &input,
+        |input| part_one(input, MAX_PAIRS),
+        |input| part_two(input, MAX_PAIRS),
+    );
 }
 
 type Coord = (usize, usize, usize);
