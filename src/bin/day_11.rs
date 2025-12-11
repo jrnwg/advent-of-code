@@ -21,24 +21,6 @@ fn init_factory(input: &str) -> HashMap<&str, Vec<&str>> {
     factory
 }
 
-fn dfs_one(factory: &HashMap<&str, Vec<&str>>, device: &str) -> usize {
-    if device == "out" {
-        return 1;
-    }
-
-    factory
-        .get(device)
-        .unwrap()
-        .iter()
-        .map(|d| dfs_one(factory, d))
-        .sum()
-}
-
-fn part_one(input: &str) -> usize {
-    let factory = init_factory(input);
-    dfs_one(&factory, "you")
-}
-
 #[cached(
     size = 1000,
     key = "(String, Vec<(String, bool)>)",
@@ -50,11 +32,7 @@ fn part_one(input: &str) -> usize {
         (device.to_string(), seen_vec)
     }"#
 )]
-fn dfs_two(
-    factory: &HashMap<&str, Vec<&str>>,
-    device: &str,
-    seen: &mut HashMap<String, bool>,
-) -> usize {
+fn dfs(factory: &HashMap<&str, Vec<&str>>, device: &str, seen: &HashMap<String, bool>) -> usize {
     if device == "out" {
         if seen.values().all(|&v| v) {
             return 1;
@@ -64,24 +42,37 @@ fn dfs_two(
     }
 
     if seen.contains_key(device) {
-        seen.insert(device.to_string(), true);
-    }
+        let mut updated = seen.clone();
+        updated.insert(device.to_string(), true);
+
+        return factory
+            .get(device)
+            .unwrap()
+            .iter()
+            .map(|d| dfs(factory, d, &updated))
+            .sum();
+    };
 
     factory
         .get(device)
         .unwrap()
         .iter()
-        .map(|d| dfs_two(factory, d, &mut seen.clone()))
+        .map(|d| dfs(factory, d, seen))
         .sum()
+}
+
+fn part_one(input: &str) -> usize {
+    let factory = init_factory(input);
+    dfs(&factory, "you", &HashMap::new())
 }
 
 fn part_two(input: &str) -> usize {
     let factory = init_factory(input);
-
-    let mut seen: HashMap<String, bool> = HashMap::new();
-    seen.insert("dac".to_string(), false);
-    seen.insert("fft".to_string(), false);
-    dfs_two(&factory, "svr", &mut seen)
+    dfs(
+        &factory,
+        "svr",
+        &HashMap::from([("dac".to_string(), false), ("fft".to_string(), false)]),
+    )
 }
 
 #[cfg(test)]
