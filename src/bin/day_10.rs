@@ -24,6 +24,7 @@ fn parse_line(line: &str) -> (Vec<bool>, Vec<Vec<bool>>) {
     (target, buttons)
 }
 
+#[allow(unused)]
 fn dfs(
     target: &Vec<bool>,
     state: &Vec<bool>,
@@ -55,13 +56,82 @@ fn dfs(
     }
 }
 
+fn gaussian_elimination_gf2(target: &[bool], buttons: &[Vec<bool>]) -> Vec<Vec<bool>> {
+    let (rows, cols) = (target.len(), buttons.len() + 1);
+    let mut matrix = vec![vec![false; cols]; rows];
+
+    for (i, row) in matrix.iter_mut().enumerate() {
+        for (j, cell) in row.iter_mut().enumerate().take(cols - 1) {
+            *cell = buttons[j][i];
+        }
+        row[cols - 1] = target[i];
+    }
+
+    let mut current_row = 0;
+    for col in 0..cols - 1 {
+        if let Some((r, _)) = matrix
+            .iter()
+            .enumerate()
+            .skip(current_row)
+            .find(|(_, row)| row[col])
+        {
+            matrix.swap(current_row, r);
+            let pivot_data: Vec<_> = matrix[current_row][col..].to_vec();
+            for (r, row) in matrix.iter_mut().enumerate() {
+                if r != current_row && row[col] {
+                    for (i, &val) in pivot_data.iter().enumerate() {
+                        row[col + i] ^= val;
+                    }
+                }
+            }
+            current_row += 1;
+        }
+    }
+
+    matrix
+}
+
+fn min_presses_by_back_substitution(matrix: Vec<Vec<bool>>) -> usize {
+    let n = matrix[0].len() - 1;
+    let pivots: Vec<_> = matrix
+        .iter()
+        .filter_map(|r| r.iter().take(n).position(|&x| x))
+        .collect();
+    let free: Vec<_> = (0..n).filter(|c| !pivots.contains(c)).collect();
+
+    (0..(1 << free.len()))
+        .map(|mask| {
+            let mut sol = vec![false; n];
+            free.iter()
+                .enumerate()
+                .for_each(|(i, &c)| sol[c] = (mask >> i) & 1 == 1);
+
+            for r in (0..matrix.len()).rev() {
+                if let Some(pivot) = matrix[r].iter().take(n).position(|&x| x) {
+                    sol[pivot] = matrix[r][n]
+                        ^ (0..n)
+                            .filter(|&c| c != pivot && matrix[r][c])
+                            .fold(false, |acc, c| acc ^ sol[c]);
+                }
+            }
+
+            sol.iter().filter(|&&x| x).count()
+        })
+        .min()
+        .unwrap_or(0)
+}
+
 fn part_one(input: &str) -> usize {
     input
         .lines()
         .filter(|line| !line.is_empty())
         .map(|line| {
             let (target, buttons) = parse_line(line);
-            dfs(&target, &vec![false; target.len()], &buttons, &0).unwrap_or(usize::MAX)
+
+            // dfs(&target, &vec![false; target.len()], &buttons, &0).unwrap_or(0)
+
+            let echelon = gaussian_elimination_gf2(&target, &buttons);
+            min_presses_by_back_substitution(echelon)
         })
         .sum()
 }
