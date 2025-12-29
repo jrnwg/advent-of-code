@@ -20,6 +20,14 @@ where
     (result, elapsed)
 }
 
+pub fn solve_one<T1>(input: &str, part_one: fn(&str) -> T1)
+where
+    T1: Display,
+{
+    let (p1, t1) = time_it(|| part_one(input));
+    println!("Part 1: {} ({:.2?})", p1, t1);
+}
+
 pub fn solve<T1, T2>(input: &str, part_one: fn(&str) -> T1, part_two: fn(&str) -> T2)
 where
     T1: Display,
